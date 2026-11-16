@@ -1,13 +1,20 @@
 import os, re, json, uuid, asyncio, hashlib, hmac, secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
-
+import traceback
+from fastapi.responses import JSONResponse
 import jwt
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+from rag.sync_knowledge import sync_knowledge
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from rag.knowledge_base import retrieve_knowledge
+
+
+security = HTTPBearer()
 
 load_dotenv()
 db = AsyncIOMotorClient(os.getenv("MONGO_URL")).recheck
@@ -16,22 +23,43 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 app = FastAPI(title="ReCheck API")
+import traceback
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def debug_exception_handler(request, exc):
+    with open("debug.log", "a", encoding="utf-8") as f:
+        f.write("\n\n========== ERROR ==========\n")
+        f.write(f"Path: {request.url.path}\n")
+        f.write(traceback.format_exc())
+
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "type": type(exc).__name__}
+    )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+def debug_log(message):
+    with open("debug.log", "a", encoding="utf-8") as f:
+        f.write(f"\n[{datetime.now()}] {message}\n")
 # ---------- helpers ----------
 uid = lambda: uuid.uuid4().hex
 now = lambda: datetime.now(timezone.utc).isoformat()
 
 
+
 def clean(d):
-    if d:
-        d["id"] = d.pop("_id")
+    d = dict(d)
+
+    if "_id" in d:
+        d["id"] = str(d.pop("_id"))
+
     return d
+
 
 
 def hash_pw(pw: str) -> str:
@@ -56,11 +84,13 @@ def token_for(u):
     return jwt.encode(p, SECRET, algorithm="HS256")
 
 
-async def me(authorization: str = Header(None)):
-    if not authorization:
-        raise HTTPException(401, "Missing token")
+
+async def me(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
     try:
-        return jwt.decode(authorization.split()[-1], SECRET, algorithms=["HS256"])
+        return jwt.decode(token, SECRET, algorithms=["HS256"])
     except Exception:
         raise HTTPException(401, "Invalid or expired token")
 
@@ -195,7 +225,15 @@ async def seed(u=Depends(need(*KB_ROLES))):
         "Tone: friendly but professional. No hype, no exclamation marks, no absolute promises."}}, upsert=True)
     return {"ok": True}
 
-
+@app.post("/rag/sync")
+async def rag_sync(u=Depends(need(*KB_ROLES))):
+    result = await sync_knowledge(db)
+    await log(u, "rag.sync")
+    return {
+        "ok": True,
+        "message": "Brand knowledge synchronized",
+        **result,
+    }
 # ---------- audit pipeline ----------
 CLAIM_RE = re.compile(
     r"(#\s?1\b|\b\d+(?:\.\d+)?\s?%|\b(?:best|guaranteed?|fastest|leading|number one|unbeatable|world-class)\b)", re.I)
@@ -321,37 +359,113 @@ async def run_audit(text):
     claims = await db.claims.find().to_list(500)
     terms = await db.terms.find().to_list(500)
     g = await db.guidelines.find_one({"_id": "main"})
-    findings = rule_check(text, terms, claims)  # stage 1
+
+    # Stage 1: Deterministic rule checks
+    findings = rule_check(text, terms, claims)
+
+    # Stage 2: Semantic RAG evidence retrieval
     ev = {}
-    for s in sentences(text):  # stage 2
-        for c in retrieve(s, claims):
-            ev[c["_id"]] = c["claimText"]
-    for c in claims:
-        ev.setdefault(c["_id"], c["claimText"]) if len(ev) < 8 else None
+
+    for s in sentences(text):
+        matches = retrieve_knowledge(s, limit=3)
+
+        for item in matches:
+            metadata = item.get("metadata", {})
+
+            if metadata.get("category") != "claim":
+                continue
+
+            source_id = metadata.get("source_id")
+
+            if not source_id:
+                continue
+
+            claim = next(
+                (
+                    c for c in claims
+                    if str(c["_id"]) == str(source_id)
+                ),
+                None
+            )
+
+            if claim:
+                ev[str(claim["_id"])] = claim["claimText"]
+
+    # Optional fallback: only if semantic retrieval found nothing
+    if not ev and claims:
+        for c in claims[:3]:
+            ev[str(c["_id"])] = c["claimText"]
+
+    # Stage 3-5: Gemini analysis, validation and merging
     note = ""
-    if GEMINI_KEY:  # stage 3-5
+
+    if GEMINI_KEY:
         flagged = [f["span"] for f in findings]
-        data = await call_ai(build_prompt(text, g["body"] if g else "", ev, flagged))
+
+        data = await call_ai(
+            build_prompt(
+                text,
+                g["body"] if g else "",
+                ev,
+                flagged
+            )
+        )
+
         if data is None:
             note = "AI step failed. Showing rule-based findings only."
+
         else:
             blob = " ".join(ev.values())
+
             for raw in data:
-                v = validate(raw, text, ev, blob) if isinstance(raw, dict) else None
+                v = (
+                    validate(raw, text, ev, blob)
+                    if isinstance(raw, dict)
+                    else None
+                )
+
                 if not v:
                     continue
-                match = next((f for f in findings if f["span"].lower() == v["span"].lower()), None)
+
+                match = next(
+                    (
+                        f for f in findings
+                        if f["span"].lower() == v["span"].lower()
+                    ),
+                    None
+                )
+
                 if match:
-                    match["suggestion"] = match["suggestion"] or v["suggestion"]
-                    if match["source"] == "rule" and match["type"] == "unsupported_claim" and v["explanation"]:
+                    match["suggestion"] = (
+                        match["suggestion"] or v["suggestion"]
+                    )
+
+                    if (
+                        match["source"] == "rule"
+                        and match["type"] == "unsupported_claim"
+                        and v["explanation"]
+                    ):
                         match["explanation"] = v["explanation"]
+
                 else:
                     findings.append(v)
+
     else:
         note = "No GEMINI_API_KEY set. Rule-based checks only."
-    order = {"high": 0, "medium": 1, "low": 2}
-    findings.sort(key=lambda f: order[f["severity"]])
+
+    # Stage 6: Sort and limit findings
+    order = {
+        "high": 0,
+        "medium": 1,
+        "low": 2
+    }
+
+    findings.sort(
+        key=lambda f: order.get(f["severity"], 3)
+    )
+
     return findings[:25], note
+
 
 
 # ---------- content, versions, findings ----------
@@ -373,35 +487,95 @@ class ReviewIn(BaseModel):
 
 
 @app.post("/content")
-async def create_content(b: ContentIn, u=Depends(need("creator", "brand_manager", "admin"))):
-    if not b.text.strip():
-        raise HTTPException(400, "Text is empty")
-    item = None
-    if b.contentId:
-        item = await db.content.find_one({"_id": b.contentId})
-        if not item:
-            raise HTTPException(404, "Content not found")
-        if item["status"] in ("in_review", "approved"):
-            raise HTTPException(400, "Locked while in review or approved")
-        cid, n = b.contentId, item["versionCount"] + 1
-    else:
-        cid, n = uid(), 1
-    vid = uid()
-    findings, note = await run_audit(b.text)
-    await db.versions.insert_one({"_id": vid, "contentId": cid, "number": n, "body": b.text,
-                                  "createdBy": u["sub"], "createdAt": now(), "aiNote": note})
-    for f in findings:
-        f.update({"_id": uid(), "versionId": vid, "contentId": cid, "status": "open"})
-    if findings:
-        await db.findings.insert_many(findings)
-    if item:
-        await db.content.update_one({"_id": cid}, {"$set": {"status": "audited", "currentVersionId": vid,
-                                                            "versionCount": n, "title": b.title}})
-    else:
-        await db.content.insert_one({"_id": cid, "title": b.title, "status": "audited", "currentVersionId": vid,
-                                     "versionCount": 1, "createdBy": u["sub"], "createdByName": u["name"], "createdAt": now()})
-    await log(u, "content.audit", cid)
-    return {"id": cid}
+async def create_content(
+    b: ContentIn,
+    u=Depends(need("creator", "brand_manager", "admin"))
+):
+    stage = "start"
+
+    try:
+        debug_log("CONTENT ROUTE ENTERED")
+
+        stage = "validate text"
+        if not b.text.strip():
+            raise HTTPException(400, "Text is empty")
+
+        stage = "fetch existing content"
+        item = None
+        if b.contentId:
+            item = await db.content.find_one({"_id": b.contentId})
+            if not item:
+                raise HTTPException(404, "Content not found")
+            if item["status"] in ("in_review", "approved"):
+                raise HTTPException(400, "Locked while in review or approved")
+            cid, n = b.contentId, item["versionCount"] + 1
+        else:
+            cid, n = uid(), 1
+
+        vid = uid()
+
+        stage = "run_audit"
+        debug_log("BEFORE run_audit")
+        findings, note = await run_audit(b.text)
+        debug_log(f"AFTER run_audit: {len(findings)} findings")
+
+        stage = "insert version"
+        await db.versions.insert_one({
+            "_id": vid,
+            "contentId": cid,
+            "number": n,
+            "body": b.text,
+            "createdBy": u["sub"],
+            "createdAt": now(),
+            "aiNote": note
+        })
+
+        stage = "insert findings"
+        for f in findings:
+            f.update({
+                "_id": uid(),
+                "versionId": vid,
+                "contentId": cid,
+                "status": "open"
+            })
+
+        if findings:
+            await db.findings.insert_many(findings)
+
+        stage = "update content" if item else "create content"
+        if item:
+            await db.content.update_one(
+                {"_id": cid},
+                {"$set": {
+                    "status": "audited",
+                    "currentVersionId": vid,
+                    "versionCount": n,
+                    "title": b.title
+                }}
+            )
+        else:
+            await db.content.insert_one({
+                "_id": cid,
+                "title": b.title,
+                "status": "audited",
+                "currentVersionId": vid,
+                "versionCount": 1,
+                "createdBy": u["sub"],
+                "createdByName": u["name"],
+                "createdAt": now()
+            })
+
+        stage = "log action"
+        await log(u, "content.audit", cid)
+
+        debug_log("CONTENT ROUTE SUCCESS")
+        return {"id": cid}
+
+    except Exception:
+        with open("debug.log", "a", encoding="utf-8") as f:
+            f.write(f"\nFAILED STAGE: {stage}\n")
+            f.write(traceback.format_exc())
+        raise
 
 
 @app.get("/content")

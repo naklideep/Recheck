@@ -1,21 +1,93 @@
-const BASE = import.meta.env.VITE_API ?? "http://localhost:8000";
+
+const BASE = (import.meta.env.VITE_API ?? "http://127.0.0.1:8000").replace(/\/$/, "");
+
 let token = localStorage.getItem("token") ?? "";
 
-export function setToken(t: string) {
-  token = t;
-  if (t) localStorage.setItem("token", t);
-  else localStorage.removeItem("token");
+type ApiResponse<T = any> = {
+  data: T;
+  status: number;
+};
+
+export class ApiError extends Error {
+  response: {
+    status: number;
+    data: { detail: any };
+  };
+
+  constructor(status: number, detail: any) {
+    super(typeof detail === "string" ? detail : "Request failed");
+    this.name = "ApiError";
+    this.response = {
+      status,
+      data: { detail },
+    };
+  }
 }
 
-export async function api<T = any>(path: string, method = "GET", body?: unknown): Promise<T> {
-  const r = await fetch(BASE + path, {
+export function setToken(value: string) {
+  token = value;
+
+  if (value) {
+    localStorage.setItem("token", value);
+  } else {
+    localStorage.removeItem("token");
+  }
+}
+
+async function request<T = any>(
+  path: string,
+  method = "GET",
+  body?: unknown
+): Promise<ApiResponse<T>> {
+  const response = await fetch(`${BASE}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: {
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!r.ok) {
-    const e = await r.json().catch(() => ({ detail: r.statusText }));
-    throw new Error(typeof e.detail === "string" ? e.detail : "Request failed");
+
+  const text = await response.text();
+
+  let data: any = null;
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
   }
-  return r.json();
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      data?.detail ?? data?.message ?? response.statusText
+    );
+  }
+
+  return {
+    data,
+    status: response.status,
+  };
 }
+
+const api = {
+  get: <T = any>(path: string) =>
+    request<T>(path, "GET"),
+
+  post: <T = any>(path: string, body?: unknown) =>
+    request<T>(path, "POST", body),
+
+  patch: <T = any>(path: string, body?: unknown) =>
+    request<T>(path, "PATCH", body),
+
+  put: <T = any>(path: string, body?: unknown) =>
+    request<T>(path, "PUT", body),
+
+  delete: <T = any>(path: string) =>
+    request<T>(path, "DELETE"),
+};
+
+export default api;

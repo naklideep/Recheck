@@ -103,6 +103,7 @@ export default function App() {
   const [content, setContent] = useState(
     "Our product is the world's best! Guaranteed 100% results!!!"
   );
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   const [items, setItems] = useState<ContentItem[]>([]);
   const [queue, setQueue] = useState<ContentItem[]>([]);
@@ -382,6 +383,45 @@ export default function App() {
         e.response?.data?.detail ||
         e.message ||
         "Audit failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // PDF / IMAGE UPLOAD AUDIT
+  async function uploadAudit() {
+    if (!uploadFile) {
+      setError("Choose a PDF or image to audit.");
+      return;
+    }
+
+    if (uploadFile.size > 15 * 1024 * 1024) {
+      setError("Files must be 15 MB or smaller.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await api.upload("/uploads/audit", uploadFile, title);
+      await loadContent();
+
+      if (res.data?.id) {
+        await openContent(res.data.id, "audit");
+      }
+
+      setUploadFile(null);
+      setMessage(
+        `File audit completed. ${res.data?.findingsCount ?? 0} findings detected.`
+      );
+    } catch (e: any) {
+      setError(
+        e.response?.data?.detail ||
+        e.message ||
+        "File upload audit failed"
       );
     } finally {
       setLoading(false);
@@ -836,6 +876,36 @@ export default function App() {
                     </span>
                   </div>
 
+                  <div className="upload-audit-box">
+                    <label htmlFor="recheck-file-upload">
+                      Upload a PDF or creative
+                    </label>
+                    <input
+                      id="recheck-file-upload"
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                      onChange={(e) =>
+                        setUploadFile(e.target.files?.[0] ?? null)
+                      }
+                    />
+                    <p className="muted small">
+                      Supported: PDF, PNG, JPG, JPEG and WEBP · Maximum 15 MB.
+                      Images are audited using OCR; PDFs need selectable text.
+                    </p>
+                    {uploadFile && (
+                      <div className="editor-footer">
+                        <span>{uploadFile.name}</span>
+                        <button
+                          className="primary"
+                          disabled={loading}
+                          onClick={uploadAudit}
+                        >
+                          {loading ? "Uploading & auditing..." : "Upload & audit →"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <label>
                     Campaign / content title
                   </label>
@@ -886,7 +956,7 @@ export default function App() {
                     "Approved claims & factual accuracy",
                     "Terminology consistency",
                     "Brand tone & guidelines",
-                    "Evidence-backed AI findings",
+                    "Deterministic rules & RAG evidence",
                   ].map((item, index) => (
                     <div className="coverage" key={item}>
                       <span className="coverage-icon">
@@ -904,8 +974,8 @@ export default function App() {
 
                     <p>
                       Rules detect risky language.
-                      RAG retrieves relevant brand knowledge.
-                      AI explains findings with evidence.
+                      RAG retrieves relevant approved brand knowledge.
+                      Findings are validated and saved for review.
                     </p>
                   </div>
                 </section>
@@ -1407,6 +1477,7 @@ function AuditDetail({
 
 // BRAND KNOWLEDGE PANEL
 
+
 function RulePanel({
   title,
   items,
@@ -1414,49 +1485,52 @@ function RulePanel({
   setValue,
   add,
   field,
-}: any) {
+}: {
+  title: string;
+  items: Rule[];
+  value: string;
+  setValue: (value: string) => void;
+  add: () => void;
+  field: "claimText" | "forbidden";
+}) {
   return (
     <section className="panel">
       <div className="panel-heading">
         <h2>{title}</h2>
-
-        <span className="pill">
-          {items.length}
-        </span>
+        <span className="pill">{items.length}</span>
       </div>
 
       <div className="rule-list">
-        {items.map((item: Rule, index: number) => (
-          <div
-            className="rule-row"
-            key={item.id || item._id || index}
-          >
-            <div>
-              {item[field] ||
-                item.claimText ||
-                item.forbidden ||
-                item.name ||
-                item.text ||
-                item.phrase ||
-                "Brand rule"}
+        {items.map((item, index) => {
+          const displayText =
+            field === "claimText"
+              ? item.claimText || item.claim || item.name || item.text
+              : item.forbidden || item.term || item.phrase;
 
-              {field === "forbidden" && item.preferred && (
-                <small className="row-id">
-                  Preferred: {item.preferred}
-                </small>
-              )}
+          return (
+            <div
+              className="rule-row"
+              key={item.id || item._id || index}
+            >
+              <div>
+                {displayText || "Brand rule"}
+
+                {field === "forbidden" && item.preferred && (
+                  <small className="row-id">
+                    Preferred: {item.preferred}
+                  </small>
+                )}
+              </div>
+
+              <span className="pill green">
+                Approved
+              </span>
             </div>
-
-            <span className="pill green">
-              Approved
-            </span>
-          </div>
-        ))}
+          );
+        })}
 
         {!items.length && (
-          <p className="muted">
-            No entries yet.
-          </p>
+          <p className="muted">No entries yet.</p>
         )}
       </div>
 
@@ -1467,10 +1541,7 @@ function RulePanel({
           placeholder={`Add ${field}...`}
         />
 
-        <button
-          className="primary"
-          onClick={add}
-        >
+        <button className="primary" onClick={add}>
           ＋ Add
         </button>
       </div>

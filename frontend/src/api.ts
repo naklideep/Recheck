@@ -1,5 +1,4 @@
-
-const BASE = (import.meta.env.VITE_API ?? "http://127.0.0.1:8000").replace(/\/$/, "");
+const BASE = (import.meta.env.VITE_API ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 let token = localStorage.getItem("token") ?? "";
 
@@ -34,6 +33,22 @@ export function setToken(value: string) {
   }
 }
 
+async function readResponse(response: Response) {
+  const text = await response.text();
+
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+function authHeaders(): HeadersInit {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T = any>(
   path: string,
   method = "GET",
@@ -43,22 +58,48 @@ async function request<T = any>(
     method,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...authHeaders(),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  const text = await response.text();
+  const data = await readResponse(response);
 
-  let data: any = null;
-
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      data?.detail ?? data?.message ?? response.statusText
+    );
   }
+
+  return {
+    data,
+    status: response.status,
+  };
+}
+
+async function upload<T = any>(
+  path: string,
+  file: File,
+  title = ""
+): Promise<ApiResponse<T>> {
+  const form = new FormData();
+  form.append("file", file);
+
+  if (title.trim()) {
+    form.append("title", title.trim());
+  }
+
+  const response = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(),
+      // Do not set Content-Type here. The browser adds the multipart boundary.
+    },
+    body: form,
+  });
+
+  const data = await readResponse(response);
 
   if (!response.ok) {
     throw new ApiError(
@@ -88,6 +129,9 @@ const api = {
 
   delete: <T = any>(path: string) =>
     request<T>(path, "DELETE"),
+
+  upload: <T = any>(path: string, file: File, title = "") =>
+    upload<T>(path, file, title),
 };
 
 export default api;

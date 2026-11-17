@@ -12,7 +12,8 @@ from pydantic import BaseModel
 from rag.sync_knowledge import sync_knowledge
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from rag.knowledge_base import retrieve_knowledge
-
+from routes.uploads import register_upload_routes
+from google import genai
 
 security = HTTPBearer()
 
@@ -310,23 +311,60 @@ Return [] if nothing is wrong.
 <DRAFT>{text}</DRAFT>"""
 
 
-def _gemini(prompt):
-    import google.generativeai as genai
-    genai.configure(api_key=GEMINI_KEY)
-    m = genai.GenerativeModel(MODEL, generation_config={"response_mime_type": "application/json", "temperature": 0.1})
-    return m.generate_content(prompt).text
-
 
 async def call_ai(prompt):
-    for _ in range(2):  # retry once, then discard
+    """Gemini JSON generation with exponential-backoff retries."""
+
+    if not GEMINI_KEY:
+        debug_log("Gemini skipped: API key missing.")
+        return None
+
+    client = genai.Client(api_key=GEMINI_KEY)
+
+    for attempt in range(3):
         try:
-            raw = await asyncio.to_thread(_gemini, prompt)
-            data = json.loads(re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.M).strip())
-            if isinstance(data, list):
-                return data
+            async with client.aio as ai:
+                response = await ai.models.generate_content(
+                    model=MODEL,
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json",
+                        "temperature": 0.1,
+                    },
+                )
+
+            raw = response.text
+
+            if not raw:
+                raise ValueError("Gemini returned an empty response.")
+
+            cleaned = re.sub(
+                r"^```(?:json)?\s*|\s*```$",
+                "",
+                raw.strip(),
+                flags=re.IGNORECASE,
+            ).strip()
+
+            data = json.loads(cleaned)
+
+            if not isinstance(data, list):
+                raise ValueError("Expected a JSON array.")
+
+            debug_log(f"Gemini success: {len(data)} findings.")
+            return data
+
         except Exception as e:
-            err = str(e)
+            debug_log(
+                f"Gemini attempt {attempt + 1}/3 failed: "
+                f"{type(e).__name__}: {e}"
+            )
+
+            if attempt < 2:
+                await asyncio.sleep(2 ** (attempt + 1))
+
+    debug_log("Gemini unavailable after 3 attempts.")
     return None
+
 
 
 def validate(f, text, allowed, blob):
@@ -397,61 +435,67 @@ async def run_audit(text):
             ev[str(c["_id"])] = c["claimText"]
 
     # Stage 3-5: Gemini analysis, validation and merging
-    note = ""
+    # note = ""
 
-    if GEMINI_KEY:
-        flagged = [f["span"] for f in findings]
+    # if GEMINI_KEY:
+    #     flagged = [f["span"] for f in findings]
 
-        data = await call_ai(
-            build_prompt(
-                text,
-                g["body"] if g else "",
-                ev,
-                flagged
-            )
-        )
+    #     data = await call_ai(
+    #         build_prompt(
+    #             text,
+    #             g["body"] if g else "",
+    #             ev,
+    #             flagged
+    #         )
+    #     )
 
-        if data is None:
-            note = "AI step failed. Showing rule-based findings only."
+    #     if data is None:
+    #         note = "AI step failed. Showing rule-based findings only."
 
-        else:
-            blob = " ".join(ev.values())
+    #     else:
+    #         blob = " ".join(ev.values())
 
-            for raw in data:
-                v = (
-                    validate(raw, text, ev, blob)
-                    if isinstance(raw, dict)
-                    else None
-                )
+    #         for raw in data:
+    #             v = (
+    #                 validate(raw, text, ev, blob)
+    #                 if isinstance(raw, dict)
+    #                 else None
+    #             )
 
-                if not v:
-                    continue
+    #             if not v:
+    #                 continue
 
-                match = next(
-                    (
-                        f for f in findings
-                        if f["span"].lower() == v["span"].lower()
-                    ),
-                    None
-                )
+    #             match = next(
+    #                 (
+    #                     f for f in findings
+    #                     if f["span"].lower() == v["span"].lower()
+    #                 ),
+    #                 None
+    #             )
 
-                if match:
-                    match["suggestion"] = (
-                        match["suggestion"] or v["suggestion"]
-                    )
+    #             if match:
+    #                 match["suggestion"] = (
+    #                     match["suggestion"] or v["suggestion"]
+    #                 )
 
-                    if (
-                        match["source"] == "rule"
-                        and match["type"] == "unsupported_claim"
-                        and v["explanation"]
-                    ):
-                        match["explanation"] = v["explanation"]
+    #                 if (
+    #                     match["source"] == "rule"
+    #                     and match["type"] == "unsupported_claim"
+    #                     and v["explanation"]
+    #                 ):
+    #                     match["explanation"] = v["explanation"]
 
-                else:
-                    findings.append(v)
+    #             else:
+    #                 findings.append(v)
 
-    else:
-        note = "No GEMINI_API_KEY set. Rule-based checks only."
+    # else:
+    #     note = "No GEMINI_API_KEY set. Rule-based checks only."
+
+    # Stage 3-5: Gemini analysis temporarily disabled
+    note = (
+        "Gemini temporarily disabled. "
+        "Audit completed using deterministic rules and RAG evidence retrieval."
+    )
 
     # Stage 6: Sort and limit findings
     order = {
@@ -678,3 +722,13 @@ async def db_check():
         return {"database": "connected", "ok": True}
     except Exception as e:
         return {"database": "disconnected", "error": str(e)}
+register_upload_routes(
+    app=app,
+    db=db,
+    me=me,
+    need=need,
+    run_audit=run_audit,
+    uid=uid,
+    now=now,
+    log=log,
+)

@@ -150,3 +150,408 @@ NameError: name 'retrieve_knowledge' is not defined
 [2026-11-17 00:38:32.575079] AFTER run_audit: 4 findings
 
 [2026-11-17 00:38:33.004868] CONTENT ROUTE SUCCESS
+
+[2026-11-17 12:18:04.248448] CONTENT ROUTE ENTERED
+
+[2026-11-17 12:18:04.250114] BEFORE run_audit
+
+[2026-11-17 12:18:05.995654] AFTER run_audit: 4 findings
+
+[2026-11-17 12:18:06.202128] CONTENT ROUTE SUCCESS
+
+[2026-11-17 13:06:42.385447] Gemini attempt 1/2 failed: ClientError: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get-started).', 'status': 'NOT_FOUND'}}
+
+[2026-11-17 13:06:42.419793] Traceback (most recent call last):
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\main.py", line 327, in call_ai
+    response = await ai.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8468, in generate_content
+    response = await self._generate_content_with_continuation(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8267, in _generate_content_with_continuation
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=call_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 6859, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2415, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2348, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 396, in __get_result
+    raise self._exception
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2269, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 279, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 301, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get-started).', 'status': 'NOT_FOUND'}}
+
+
+[2026-11-17 13:06:42.970073] Gemini attempt 2/2 failed: ClientError: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get-started).', 'status': 'NOT_FOUND'}}
+
+[2026-11-17 13:06:42.983499] Traceback (most recent call last):
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\main.py", line 327, in call_ai
+    response = await ai.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8468, in generate_content
+    response = await self._generate_content_with_continuation(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8267, in _generate_content_with_continuation
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=call_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 6859, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2415, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2348, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 396, in __get_result
+    raise self._exception
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2269, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 279, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 301, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get-started).', 'status': 'NOT_FOUND'}}
+
+
+[2026-11-17 13:06:42.985877] Gemini failed after 2 attempts. Using rule-based findings.
+
+[2026-11-17 13:11:56.719272] Gemini attempt 1/2 failed: ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+
+[2026-11-17 13:11:56.749575] Traceback (most recent call last):
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\main.py", line 327, in call_ai
+    response = await ai.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8468, in generate_content
+    response = await self._generate_content_with_continuation(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8267, in _generate_content_with_continuation
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=call_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 6859, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2415, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2348, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 396, in __get_result
+    raise self._exception
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2269, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 279, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 303, in raise_error_async
+    raise ServerError(status_code, response_json, response)
+google.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+
+
+[2026-11-17 13:17:05.275128] Gemini attempt 1/2 failed: ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+
+[2026-11-17 13:17:05.296553] Traceback (most recent call last):
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\main.py", line 327, in call_ai
+    response = await ai.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8468, in generate_content
+    response = await self._generate_content_with_continuation(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8267, in _generate_content_with_continuation
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=call_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 6859, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2415, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2348, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 396, in __get_result
+    raise self._exception
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2269, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 279, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 303, in raise_error_async
+    raise ServerError(status_code, response_json, response)
+google.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+
+
+[2026-11-17 13:17:16.933028] Gemini attempt 2/2 failed: ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+
+[2026-11-17 13:17:16.936304] Traceback (most recent call last):
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\main.py", line 327, in call_ai
+    response = await ai.models.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8468, in generate_content
+    response = await self._generate_content_with_continuation(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=final_parsed_config_to_call
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 8267, in _generate_content_with_continuation
+    response = await self._generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        model=model, contents=contents, config=call_config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\models.py", line 6859, in _generate_content
+    response = await self._api_client.async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        'post', path, request_dict, http_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2415, in async_request
+    result = await self._async_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        http_request=http_request, http_options=http_options, stream=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2348, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._async_request_once, http_request, stream
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Lenovo\AppData\Local\Python\pythoncore-3.14-64\Lib\concurrent\futures\_base.py", line 396, in __get_result
+    raise self._exception
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\tenacity\asyncio\__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\_api_client.py", line 2269, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 279, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "C:\Users\Lenovo\OneDrive\Desktop\Recheck\recheck\recheck\backend\.venv\Lib\site-packages\google\genai\errors.py", line 303, in raise_error_async
+    raise ServerError(status_code, response_json, response)
+google.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+
+
+[2026-11-17 13:17:16.937053] Gemini failed after 2 attempts. Using rule-based findings.
+
+[2026-11-17 13:28:04.935676] Gemini success: 0 findings.
+
+[2026-11-17 13:36:33.345080] CONTENT ROUTE ENTERED
+
+[2026-11-17 13:36:33.346489] BEFORE run_audit
+
+[2026-11-17 13:36:33.812766] AFTER run_audit: 4 findings
+
+[2026-11-17 13:36:34.255012] CONTENT ROUTE SUCCESS
+
+[2026-11-17 13:41:04.178156] CONTENT ROUTE ENTERED
+
+[2026-11-17 13:41:04.179194] BEFORE run_audit
+
+[2026-11-17 13:41:04.425024] AFTER run_audit: 0 findings
+
+[2026-11-17 13:41:04.797683] CONTENT ROUTE SUCCESS

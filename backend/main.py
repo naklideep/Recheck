@@ -17,13 +17,46 @@ from google import genai
 
 security = HTTPBearer()
 
+
 load_dotenv()
-db = AsyncIOMotorClient(os.getenv("MONGO_URL")).recheck
-SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
+
+MONGO_URL = os.getenv("MONGO_URL")
+SECRET = os.getenv("JWT_SECRET")
+
+if not MONGO_URL:
+    raise RuntimeError("MONGO_URL environment variable is required")
+
+if not SECRET or len(SECRET) < 32:
+    raise RuntimeError("JWT_SECRET must contain at least 32 characters")
+
+mongo_client = AsyncIOMotorClient(MONGO_URL)
+db = mongo_client.recheck
+
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
+
 app = FastAPI(title="ReCheck API")
+
+@app.on_event("startup")
+async def startup_initialize():
+    try:
+        # Verify MongoDB connection
+        await db.command("ping")
+        debug_log("MongoDB connection successful")
+
+        # Rebuild ChromaDB knowledge from MongoDB
+        result = await sync_knowledge(db)
+
+        debug_log(
+            f"ChromaDB synchronization successful: {result}"
+        )
+
+    except Exception as exc:
+        debug_log(
+            f"Startup initialization warning: {type(exc).__name__}: {exc}"
+        )
+
 import traceback
 from fastapi.responses import JSONResponse
 
@@ -38,12 +71,24 @@ async def debug_exception_handler(request, exc):
         status_code=500,
         content={"error": str(exc), "type": type(exc).__name__}
     )
+
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173"
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
 def debug_log(message):
     with open("debug.log", "a", encoding="utf-8") as f:
         f.write(f"\n[{datetime.now()}] {message}\n")
@@ -109,11 +154,12 @@ async def log(user, action, ref=""):
 
 
 # ---------- auth ----------
+
 class Reg(BaseModel):
     email: str
     name: str
     password: str
-    role: Literal["admin", "brand_manager", "creator", "reviewer"] = "creator"
+
 
 
 class LoginIn(BaseModel):
@@ -121,14 +167,39 @@ class LoginIn(BaseModel):
     password: str
 
 
+
 @app.post("/auth/register")
 async def register(r: Reg):
     email = r.email.lower().strip()
+    name = r.name.strip()
+
+    if not email or not name:
+        raise HTTPException(400, "Name and email are required")
+
+    if len(r.password) < 8:
+        raise HTTPException(
+            400,
+            "Password must contain at least 8 characters"
+        )
+
     if await db.users.find_one({"email": email}):
         raise HTTPException(400, "Email already registered")
-    u = {"_id": uid(), "email": email, "name": r.name, "role": r.role, "pw": hash_pw(r.password)}
+
+    u = {
+        "_id": uid(),
+        "email": email,
+        "name": name,
+        "role": "creator",
+        "pw": hash_pw(r.password)
+    }
+
     await db.users.insert_one(u)
-    return {"token": token_for(u), "user": pub(u)}
+
+    return {
+        "token": token_for(u),
+        "user": pub(u)
+    }
+
 
 
 @app.post("/auth/login")

@@ -1,15 +1,45 @@
 
+import os
+
 import chromadb
 from chromadb.utils.embedding_functions import (
     SentenceTransformerEmbeddingFunction,
 )
 
-# Persistent local vector database
-client = chromadb.PersistentClient(path="./chroma_db")
+
+# --------------------------------------------------
+# CHROMA DB CONFIGURATION
+# --------------------------------------------------
+
+# Local default: ./chroma_db
+# Render free deployment: /tmp/chroma_db
+CHROMA_DB_PATH = os.getenv(
+    "CHROMA_DB_PATH",
+    "./chroma_db",
+)
+
+client = chromadb.PersistentClient(
+    path=CHROMA_DB_PATH
+)
+
+
+# --------------------------------------------------
+# EMBEDDING MODEL
+# --------------------------------------------------
+
+EMBEDDING_MODEL = os.getenv(
+    "EMBEDDING_MODEL",
+    "all-MiniLM-L6-v2",
+)
 
 embedding_function = SentenceTransformerEmbeddingFunction(
-    model_name="all-MiniLM-L6-v2"
+    model_name=EMBEDDING_MODEL
 )
+
+
+# --------------------------------------------------
+# KNOWLEDGE COLLECTION
+# --------------------------------------------------
 
 collection = client.get_or_create_collection(
     name="brand_knowledge",
@@ -17,6 +47,10 @@ collection = client.get_or_create_collection(
     metadata={"hnsw:space": "cosine"},
 )
 
+
+# --------------------------------------------------
+# ADD / UPDATE KNOWLEDGE
+# --------------------------------------------------
 
 def add_knowledge(
     knowledge_id: str,
@@ -46,6 +80,10 @@ def add_knowledge(
     )
 
 
+# --------------------------------------------------
+# RETRIEVE KNOWLEDGE
+# --------------------------------------------------
+
 def retrieve_knowledge(
     query: str,
     limit: int = 5,
@@ -55,33 +93,72 @@ def retrieve_knowledge(
     Retrieve relevant approved brand knowledge.
     """
 
+    if not query or not query.strip():
+        return []
+
+    if limit <= 0:
+        return []
+
+    total_documents = collection.count()
+
+    if total_documents == 0:
+        return []
+
     where = {"category": category} if category else None
 
     results = collection.query(
         query_texts=[query],
-        n_results=min(limit, collection.count() or 1),
+        n_results=min(limit, total_documents),
         where=where,
+        include=[
+            "documents",
+            "metadatas",
+            "distances",
+        ],
     )
 
     retrieved = []
 
-    if not results["documents"]:
+    documents = results.get("documents") or [[]]
+    ids = results.get("ids") or [[]]
+    metadatas = results.get("metadatas") or [[]]
+    distances = results.get("distances") or [[]]
+
+    if not documents or not documents[0]:
         return retrieved
 
-    for i, document in enumerate(results["documents"][0]):
+    for i, document in enumerate(documents[0]):
         retrieved.append({
-            "id": results["ids"][0][i],
+            "id": ids[0][i],
             "text": document,
-            "metadata": results["metadatas"][0][i],
-            "distance": results["distances"][0][i],
+            "metadata": (
+                metadatas[0][i]
+                if metadatas[0]
+                else {}
+            ),
+            "distance": (
+                distances[0][i]
+                if distances[0]
+                else None
+            ),
         })
 
     return retrieved
 
 
-def delete_knowledge(knowledge_id: str):
-    collection.delete(ids=[knowledge_id])
+# --------------------------------------------------
+# DELETE KNOWLEDGE
+# --------------------------------------------------
 
+def delete_knowledge(knowledge_id: str):
+    collection.delete(
+        ids=[knowledge_id]
+    )
+
+
+# --------------------------------------------------
+# KNOWLEDGE COUNT
+# --------------------------------------------------
 
 def knowledge_count():
     return collection.count()

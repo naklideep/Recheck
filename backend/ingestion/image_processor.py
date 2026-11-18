@@ -1,19 +1,38 @@
 
 """OCR extraction for RECHECK marketing creatives."""
 
+import os
 from io import BytesIO
 from typing import Any
 
-from PIL import Image, ImageOps, UnidentifiedImageError
 import pytesseract
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .text_processor import normalize_extracted_text
 
 
-# Configure Windows Tesseract OCR
-pytesseract.pytesseract.tesseract_cmd = (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-)
+# --------------------------------------------------
+# TESSERACT OCR CONFIGURATION
+# --------------------------------------------------
+
+# Windows local development:
+# C:\Program Files\Tesseract-OCR\tesseract.exe
+#
+# Render Linux deployment:
+# /usr/bin/tesseract
+#
+# If TESSERACT_CMD is not provided, pytesseract
+# will use the system PATH.
+
+TESSERACT_CMD = os.getenv("TESSERACT_CMD")
+
+if TESSERACT_CMD:
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+
+
+# --------------------------------------------------
+# IMAGE CONFIGURATION
+# --------------------------------------------------
 
 MAX_IMAGE_PIXELS = 30_000_000
 
@@ -23,6 +42,10 @@ SUPPORTED_IMAGE_FORMATS = {
     "WEBP",
 }
 
+
+# --------------------------------------------------
+# IMAGE OCR EXTRACTION
+# --------------------------------------------------
 
 def extract_image(
     file_bytes: bytes,
@@ -49,7 +72,9 @@ def extract_image(
     width, height = image.size
 
     if width * height > MAX_IMAGE_PIXELS:
-        raise ValueError("Image dimensions are too large.")
+        raise ValueError(
+            "Image dimensions are too large."
+        )
 
     image = ImageOps.exif_transpose(image).convert("RGB")
 
@@ -65,9 +90,13 @@ def extract_image(
         ) from exc
 
     except Exception as exc:
-        raise RuntimeError("Image OCR processing failed.") from exc
+        raise RuntimeError(
+            "Image OCR processing failed."
+        ) from exc
 
-    extracted_text = normalize_extracted_text(extracted_text)
+    extracted_text = normalize_extracted_text(
+        extracted_text
+    )
 
     return {
         "text": extracted_text,

@@ -1644,8 +1644,8 @@ export default function App() {
   const [user, setUser] = useState<User | null>(getStoredUser);
   const [tab, setTab] = useState<Tab>("dashboard");
 
-  const [email, setEmail] = useState("deep.test@example.com");
-  const [password, setPassword] = useState("TestPass123");
+  const [email, setEmail] = useState("deep.admin@brandora.dev");
+  const [password, setPassword] = useState("BrandoraAdmin@2026!");
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
   const [title, setTitle] = useState("Test Campaign");

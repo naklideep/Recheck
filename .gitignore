@@ -3,14 +3,29 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
+.mypy_cache/
 
 # Secrets
 .env
 .env.*
+!.env.example
 
 # Frontend
 node_modules/
 dist/
+dist-ssr/
+
+# Logs
+*.log
+
+# Local databases
+*.sqlite3
 
 # IDE
 .vscode/
+.idea/
+.DS_Store
+
+# ChromaDB
+chroma_db/
